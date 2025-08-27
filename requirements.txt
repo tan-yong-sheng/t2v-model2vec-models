@@ -1,5 +1,5 @@
-model2vec===0.4.1
-fastapi==0.115.11
-uvicorn==0.34.0
-cachetools==5.5.2
+model2vec===0.6.0
+fastapi==0.116.1
+uvicorn==0.35.0
+cachetools==6.1.0
 python-dotenv==1.1.0
