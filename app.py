@@ -71,6 +71,20 @@ def meta(
         return {"error": "Unauthorized"}
 
 
+def get_available_model():
+    """Get the available model name from environment or config"""
+    model_name = os.getenv("MODEL_NAME")
+    if not model_name:
+        config = meta_config.get()
+        model_name = config.get("model_path", "minishlab/potion-base-8M")
+    
+    # Extract just the model name if it's a path
+    if "/" in model_name and not model_name.startswith("minishlab/"):
+        return "minishlab/potion-base-8M"
+    else:
+        return model_name
+
+
 @app.get("/v1/models")
 @app.get("/models")
 async def list_models(
@@ -79,17 +93,7 @@ async def list_models(
 ):
     if is_authorized(auth):
         try:
-            # Get model name from environment variable, fallback to config, then default
-            model_name = os.getenv("MODEL_NAME")
-            if not model_name:
-                config = meta_config.get()
-                model_name = config.get("model_path", "minishlab/potion-base-8M")
-            
-            # Extract just the model name if it's a path
-            if "/" in model_name and not model_name.startswith("minishlab/"):
-                model_display_name = "minishlab/potion-base-8M"
-            else:
-                model_display_name = model_name
+            model_display_name = get_available_model()
             
             return {
                 "object": "list",
@@ -121,18 +125,69 @@ async def embed(item: VectorInput,
                 auth: Optional[HTTPAuthorizationCredentials] = Depends(get_bearer_token)):
     if is_authorized(auth):
         try:
+            # Validate model parameter
+            available_model = get_available_model()
+            if item.model != available_model:
+                response.status_code = status.HTTP_400_BAD_REQUEST
+                return {"error": f"Model '{item.model}' not found. Available model: '{available_model}'"}
+            
+            # Validate encoding format
+            if item.encoding_format not in ["float", "base64"]:
+                response.status_code = status.HTTP_400_BAD_REQUEST
+                return {"error": "encoding_format must be 'float' or 'base64'"}
+            
             if isinstance(item.input, list):
                 item.input = tuple(item.input)  # Convert list to tuple for hashability
             
             vector = await vec.vectorize(item.input, item.config)
+            
+            # Handle dimensions parameter (truncate if specified)
+            if item.dimensions and item.dimensions > 0:
+                vector = vector[:, :item.dimensions]
+            
+            # Convert to list for JSON serialization
+            vector_list = vector.tolist()
+            
+            # Handle encoding format
+            if item.encoding_format == "base64":
+                import base64
+                import numpy as np
+                # Convert to base64 encoded string
+                data = []
+                for i, embedding in enumerate(vector_list):
+                    arr = np.array(embedding, dtype=np.float32)
+                    encoded = base64.b64encode(arr.tobytes()).decode('utf-8')
+                    data.append({
+                        "object": "embedding",
+                        "index": i,
+                        "embedding": encoded
+                    })
+            else:
+                # Default float format
+                data = []
+                for i, embedding in enumerate(vector_list):
+                    data.append({
+                        "object": "embedding", 
+                        "index": i,
+                        "embedding": embedding
+                    })
+            
+            # Calculate token usage (approximate)
+            if isinstance(item.input, tuple):
+                input_texts = list(item.input)
+            else:
+                input_texts = [item.input]
+            
+            total_tokens = sum(len(text.split()) for text in input_texts)
+            
             return {
                 "object": "list",
-                "data": [{
-                    "object": "embedding",
-                    "index": index,
-                    "embedding": embedding_item
-                } for index, embedding_item in enumerate(vector.tolist())],
-                "model": item.model
+                "data": data,
+                "model": item.model,
+                "usage": {
+                    "prompt_tokens": total_tokens,
+                    "total_tokens": total_tokens
+                }
             }
         except Exception as e:
             logger.exception("Something went wrong while vectorizing data.")

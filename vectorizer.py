@@ -27,6 +27,8 @@ class VectorInput(BaseModel):
     input: str | list
     model: str
     config: Optional[VectorInputConfig] = None
+    encoding_format: Optional[str] = "float"  # OpenAI compatibility: "float" or "base64"
+    dimensions: Optional[int] = None  # OpenAI compatibility: for truncating embeddings
 
     def __hash__(self):
         if isinstance(self.input, list):
