@@ -67,6 +67,45 @@ def meta(
         return {"error": "Unauthorized"}
 
 
+@app.get("/v1/models")
+async def list_models(
+    response: Response,
+    auth: Optional[HTTPAuthorizationCredentials] = Depends(get_bearer_token)
+):
+    if is_authorized(auth):
+        try:
+            config = meta_config.get()
+            model_name = config.get("model_path", "minishlab/potion-base-8M")
+            
+            # Extract just the model name if it's a path
+            if "/" in model_name and not model_name.startswith("minishlab/"):
+                model_display_name = "minishlab/potion-base-8M"
+            else:
+                model_display_name = model_name
+            
+            return {
+                "object": "list",
+                "data": [
+                    {
+                        "id": model_display_name,
+                        "object": "model",
+                        "created": 1700000000,  # Static timestamp
+                        "owned_by": "minishlab",
+                        "permission": [],
+                        "root": model_display_name,
+                        "parent": None
+                    }
+                ]
+            }
+        except Exception as e:
+            logger.exception("Something went wrong while listing models.")
+            response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+            return {"error": str(e)}
+    else:
+        response.status_code = status.HTTP_401_UNAUTHORIZED
+        return {"error": "Unauthorized"}
+
+
 @app.post("/v1/embeddings")
 @app.post("/embeddings")
 async def embed(item: VectorInput,
