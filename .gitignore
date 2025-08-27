@@ -5,3 +5,4 @@ model/
 nltk_data
 .venv/
 .vscode/
+.env

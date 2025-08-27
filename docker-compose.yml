@@ -5,9 +5,15 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        MODEL_NAME: "minishlab/potion-base-8M"
+        MODEL_NAME: ${MODEL_NAME:-minishlab/potion-base-8M}
     image: model2vec-potion-base-8m
     environment:
-      - MODEL_NAME=minishlab/potion-base-8M
+      - MODEL_NAME=${MODEL_NAME:-minishlab/potion-base-8M}
     ports:
       - "8012:8080"
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    external: true
