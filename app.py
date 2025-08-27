@@ -5,8 +5,12 @@ from typing import Optional, List
 from logging import getLogger
 from fastapi import FastAPI, Depends, Response, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from dotenv import load_dotenv
 from vectorizer import Vectorizer, VectorInput
 from meta import Meta
+
+# Load environment variables from .env file
+load_dotenv()
 
 logger = getLogger("uvicorn")
 
@@ -68,14 +72,18 @@ def meta(
 
 
 @app.get("/v1/models")
+@app.get("/models")
 async def list_models(
     response: Response,
     auth: Optional[HTTPAuthorizationCredentials] = Depends(get_bearer_token)
 ):
     if is_authorized(auth):
         try:
-            config = meta_config.get()
-            model_name = config.get("model_path", "minishlab/potion-base-8M")
+            # Get model name from environment variable, fallback to config, then default
+            model_name = os.getenv("MODEL_NAME")
+            if not model_name:
+                config = meta_config.get()
+                model_name = config.get("model_path", "minishlab/potion-base-8M")
             
             # Extract just the model name if it's a path
             if "/" in model_name and not model_name.startswith("minishlab/"):
