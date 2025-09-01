@@ -53,6 +53,19 @@ curl -X 'POST' \
 
 - Stop the running docker container: `docker stop <CONTAINER_NAME>`
 
+
+You could change the embeddings model from `minishlab/potion-base-8M` to other models as follows:
+
+|Model Name|Language|
+|---|---|---|
+|[`potion-multilingual-128M`](https://huggingface.co/minishlab/potion-multilingual-128M)|Multilingual|
+|[`potion-retrieval-32M`](https://huggingface.co/minishlab/potion-retrieval-32M)|English|
+|[`potion-base-4M`](https://huggingface.co/minishlab/potion-base-4M)|English|
+|[`potion-base-8M`](https://huggingface.co/minishlab/potion-base-8M)|English|
+|[`potion-base-32M`](https://huggingface.co/minishlab/potion-base-32M)|English|
+
+You just need to copy `.env.example` to `.env`, and then change the `MODEL_NAME` value there.
+
 🔗 Useful Resources
 --------------------
 
