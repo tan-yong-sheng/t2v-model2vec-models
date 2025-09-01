@@ -57,7 +57,7 @@ curl -X 'POST' \
 You could change the embeddings model from `minishlab/potion-base-8M` to other models as follows:
 
 |Model Name|Language|
-|---|---|---|
+|---|---|
 |[`potion-multilingual-128M`](https://huggingface.co/minishlab/potion-multilingual-128M)|Multilingual|
 |[`potion-retrieval-32M`](https://huggingface.co/minishlab/potion-retrieval-32M)|English|
 |[`potion-base-4M`](https://huggingface.co/minishlab/potion-base-4M)|English|
